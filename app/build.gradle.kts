@@ -35,7 +35,8 @@ android {
     namespace = "eu.kanade.tachiyomi"
 
     defaultConfig {
-        applicationId = "app.mihon"
+        // Keep this fork installable alongside the original Mihon app.
+        applicationId = "app.mihon.translator"
 
         versionCode = 39
         versionName = "0.21.3"
