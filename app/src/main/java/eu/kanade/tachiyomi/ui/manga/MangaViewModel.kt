@@ -12,6 +12,12 @@ import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
@@ -40,7 +46,9 @@ import eu.kanade.presentation.util.formattedMessage
 import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.download.DownloadCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
+import eu.kanade.tachiyomi.data.download.TranslationWorker
 import eu.kanade.tachiyomi.data.download.model.Download
+import eu.kanade.domain.translation.TranslationPreferences
 import eu.kanade.tachiyomi.data.track.EnhancedTracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.source.Source
@@ -139,6 +147,7 @@ class MangaViewModel(
     private val sourceManager: SourceManager,
     private val refreshTracks: RefreshTracks,
     private val coverCache: CoverCache,
+    private val translationPreferences: TranslationPreferences,
 ) : ViewModel() {
 
     private val subscriberGate = SubscriberGate()
@@ -730,6 +739,34 @@ class MangaViewModel(
                 deleteChapters(items.map { it.chapter })
             }
         }
+    }
+
+    fun translateChapters(items: List<ChapterList.Item>) {
+        val state = successState ?: return
+        if (translationPreferences.apiKey.get().isBlank()) {
+            viewModelScope.launch { snackbarHostState.showSnackbar("أضف مفتاح OpenAI API من إعدادات التنزيل أولاً") }
+            return
+        }
+        val workManager = WorkManager.getInstance(context)
+        val constraints = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
+        items.forEach { item ->
+            val request = OneTimeWorkRequestBuilder<TranslationWorker>()
+                .setInputData(workDataOf(
+                    TranslationWorker.KEY_MANGA_ID to state.manga.id,
+                    TranslationWorker.KEY_CHAPTER_ID to item.chapter.id,
+                ))
+                .setConstraints(constraints)
+                .build()
+            workManager.enqueueUniqueWork("chapter-translation-${item.chapter.id}", ExistingWorkPolicy.KEEP, request)
+        }
+        toggleAllSelection(false)
+        viewModelScope.launch { snackbarHostState.showSnackbar("تمت إضافة الفصول إلى قائمة الترجمة") }
+    }
+
+    fun cancelTranslations(items: List<ChapterList.Item>) {
+        val workManager = WorkManager.getInstance(context)
+        items.forEach { workManager.cancelUniqueWork("chapter-translation-${it.chapter.id}") }
+        viewModelScope.launch { snackbarHostState.showSnackbar("تم طلب إلغاء ترجمة الفصول المحددة") }
     }
 
     fun runDownloadAction(action: DownloadAction) {

@@ -76,6 +76,8 @@ fun MangaBottomActionMenu(
     onMarkAsUnreadClicked: (() -> Unit)? = null,
     onMarkPreviousAsReadClicked: (() -> Unit)? = null,
     onDownloadClicked: (() -> Unit)? = null,
+    onTranslateClicked: (() -> Unit)? = null,
+    onCancelTranslationClicked: (() -> Unit)? = null,
     onDeleteClicked: (() -> Unit)? = null,
 ) {
     AnimatedVisibility(
@@ -90,7 +92,7 @@ fun MangaBottomActionMenu(
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
             val haptic = LocalHapticFeedback.current
-            val confirm = remember { mutableStateListOf(false, false, false, false, false, false, false) }
+            val confirm = remember { mutableStateListOf(false, false, false, false, false, false, false, false, false) }
             var resetJob by remember { mutableStateOf<Job?>(null) }
             val onLongClickItem: (Int) -> Unit = { toConfirmIndex ->
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -162,6 +164,24 @@ fun MangaBottomActionMenu(
                         toConfirm = confirm[5],
                         onLongClick = { onLongClickItem(5) },
                         onClick = onDownloadClicked,
+                    )
+                }
+                if (onTranslateClicked != null) {
+                    Button(
+                        title = "ترجمة الفصل",
+                        icon = MaterialSymbols.Rounded.Download,
+                        toConfirm = confirm[7],
+                        onLongClick = { onLongClickItem(7) },
+                        onClick = onTranslateClicked,
+                    )
+                }
+                if (onCancelTranslationClicked != null) {
+                    Button(
+                        title = "إلغاء الترجمة",
+                        icon = MaterialSymbols.Rounded.Delete,
+                        toConfirm = confirm[8],
+                        onLongClick = { onLongClickItem(8) },
+                        onClick = onCancelTranslationClicked,
                     )
                 }
                 if (onDeleteClicked != null) {

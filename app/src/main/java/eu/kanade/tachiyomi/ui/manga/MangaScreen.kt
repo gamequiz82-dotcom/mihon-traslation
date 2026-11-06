@@ -115,6 +115,8 @@ class MangaScreen(
             navigateUp = navigator::pop,
             onChapterClicked = { openChapter(context, it) },
             onDownloadChapter = viewModel::runChapterDownloadActions.takeIf { !successState.source.isLocalOrStub() },
+            onTranslateChapters = viewModel::translateChapters,
+            onCancelTranslations = viewModel::cancelTranslations,
             downloadProgressProvider = viewModel::getDownloadProgress,
             onAddToLibraryClicked = {
                 if (successState.manga.favorite) {

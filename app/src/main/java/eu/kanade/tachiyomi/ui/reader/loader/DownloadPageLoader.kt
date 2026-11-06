@@ -58,9 +58,22 @@ internal class DownloadPageLoader(
 
     private suspend fun getPagesFromDirectory(): List<ReaderPage> {
         val pages = downloadManager.buildPageList(source, manga, chapter.chapter)
-        return pages.map { page ->
+        val chapterDir = downloadProvider.findChapterDir(
+            chapter.chapter.name,
+            chapter.chapter.scanlator,
+            chapter.chapter.url,
+            manga.title,
+            source,
+        )
+        val translated = chapterDir?.findFile(eu.kanade.tachiyomi.data.download.TranslationWorker.TRANSLATED_DIR)
+            ?.listFiles()
+            .orEmpty()
+            .filter { it.isFile && it.name?.endsWith(".png", ignoreCase = true) == true }
+            .sortedBy { it.name }
+        return pages.mapIndexed { index, page ->
+            val translatedUri = translated.getOrNull(index)?.uri
             ReaderPage(page.index, page.url, page.imageUrl) {
-                context.contentResolver.openInputStream(page.uri ?: Uri.EMPTY)!!
+                context.contentResolver.openInputStream(translatedUri ?: page.uri ?: Uri.EMPTY)!!
             }.apply {
                 status = Page.State.Ready
             }
