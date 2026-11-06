@@ -12,6 +12,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.util.fastMap
 import eu.kanade.presentation.category.visualName
 import eu.kanade.presentation.more.settings.Preference
+import eu.kanade.domain.translation.TranslationPreferences
 import eu.kanade.presentation.more.settings.widget.TriStateListDialog
 import mihon.app.di.appGraph
 import tachiyomi.domain.category.model.Category
@@ -34,7 +35,23 @@ object SettingsDownloadScreen : SearchableSettings {
         val allCategories by getCategories.subscribe().collectAsState(initial = emptyList())
 
         val downloadPreferences = remember { context.appGraph.downloadPreferences }
+        val translationPreferences = remember { context.appGraph.translationPreferences }
         return listOf(
+            Preference.PreferenceGroup(
+                title = "AI chapter translation",
+                preferenceItems = listOf(
+                    Preference.PreferenceItem.EditTextPreference(
+                        preference = translationPreferences.apiKey,
+                        title = "OpenAI API key",
+                        subtitle = "Stored on this device. Required to translate chapters.",
+                    ),
+                    Preference.PreferenceItem.ListPreference(
+                        preference = translationPreferences.targetLanguage,
+                        entries = mapOf("Arabic" to "العربية", "English" to "English", "French" to "Français", "Spanish" to "Español"),
+                        title = "Target language",
+                    ),
+                ),
+            ),
             Preference.PreferenceItem.SwitchPreference(
                 preference = downloadPreferences.downloadOnlyOverWifi,
                 title = stringResource(MR.strings.connected_to_wifi),
